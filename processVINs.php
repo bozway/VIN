@@ -10,71 +10,84 @@
     
     
     function searchPackage($vin){
+		//create url based on VIN #
         $url = "https://www.vindecoderz.com/EN/check-lookup/" . $vin;
-        $content = file_get_contents($url);
-        
+        //Grab Content via URL
+		$content = file_get_contents($url);
+        echo $url . "<br / >";
+		
+		//Throw Exception if URL is not loadable.
         if($content === false){
             throw new Exception ("failed to grab content <br />");
         }
         $contentLow = strtolower($content);
         
+		//Throw Exception if attempts alert came up
         if(strpos($contentLow,"too many attempts")!==false){
             throw new Exception ($contentLow);
         }
         
+		//Check and see if these feature exists in the car
         $drAsPac = strpos($contentLow,"assistance package");
         $tecPac = strpos($contentLow,"technology package");
         $bldSpt = strpos($contentLow,"blind spot");
-        
-        echo $drAsPac . " " . $tecPac + " " . $bldSpt . substr($contentLow,0,100);
+		
+		
+		$contentTitleStart = strpos($contentLow, "<title>")+7;
+		$contentTitleEnd = strpos($contentLow, "</title>");
+		$contentTitleLength = $contentTitleEnd-$contentTitleStart;
+        echo $drAsPac . " " . $tecPac + " " . $bldSpt . substr($contentLow,$contentTitleStart,$contentTitleLength) . "<br />";
         
         if($drAsPac===false && $tecPac ===false && $bldSpt === false){
             echo "Can't find Match <br />";
             return false;
         }
-        echo $drAsPac . " " . $tecPac . " " . $bldSpt . "<br />";
         return true;
     }
     
-    /*
+    
     //Go throgh what's in VIN.txt file, and process each VIN.
     //Remove prossed records from $vinFile
     //Append matching records to $checkedFile
-    while(isset($vinLines[0])){
-        if(strpos($vinLines[0],"3E")!==false){
-            echo $vinLines[0] . "<br />";
-            array_push($newLines,$vinLines[0]);
-        }
-        array_shift($vinLines);
-        if(sizeof($newLines)==2){
-            break;
-        }
+	//$countControl # of tries;
+	$countControl = 0;
+    while(isset($vinLines[0]) && $countControl <2){
+		try{
+			//check if vin has the right package or not, if so, added to newLines 
+			if(searchPackage($vinLines[0])){
+				array_push($newLines,$vinLines[0]);
+				echo "Adding " . $vinLines[0] . " to $newLines, " . sizeof($newLines) . " records Found <br />";
+			}
+			//shift array to take out first vin processed;
+			array_shift($vinLines);
+			echo sizeof($vinLines) . " records left to be processed <br />";
+		}catch(Exception $e){
+			echo $e . "<br />";
+			break;
+		}
+		$countControl++;
+		sleep(5);
     }
+	//*/
+	
+	/*
+	echo "got here !";
+	
+	array_shift($vinLines);
+	array_shift($vinLines);
+	array_shift($vinLines);
+	array_shift($vinLines);
+	array_push($newLines,"aaaa\n");
+	array_push($newLines,"bbbb\n");
+	array_push($newLines,"cccc\n");
+	
+	echo sizeof($vinLines) . " + " . sizeof($newLines) . "<br />";
+	*/
+	
     file_put_contents($checkedFileName,$newLines,FILE_APPEND | LOCK_EX);
     file_put_contents($vinFileName,$vinLines);
     
-    //*/
-    
-    
-    try{
-        if(searchPackage($vinLines[9])){
-            array_push($newLines,$vinLines[9]);
-        }
-        $vinLines = array_shift($vinLines);
-    }catch(Exception $e){
-        echo $e . "<br />";
-    }
-    
-    print_r($newLines);
-    
-    
+    //*./
 
   
-  /*
-  
-  for ($i = 0; i<count($lines); i++){
-      
-  }
-  
-  //*/
 ?>
